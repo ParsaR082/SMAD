@@ -139,11 +139,11 @@ The final product should provide:
 ---
 
 ### Phase 2: Mock Data & MVP Visualizations
-- [ ] Generate mock JSON dataset with posts, hashtags, mentions, and sentiment.  
-- [ ] Build Top Hashtags **Bar Chart** with Recharts.  
-- [ ] Build Hashtag Trend **Line Chart**.  
-- [ ] Build Sentiment **Pie Chart**.  
-- [ ] Display simple **D3 Force Graph** for user interactions.  
+- [x] Generate mock JSON dataset with posts, hashtags, mentions, and sentiment.  
+- [x] Build Top Hashtags **Bar Chart** with Recharts.  
+- [x] Build Hashtag Trend **Line Chart**.  
+- [x] Build Sentiment **Pie Chart**.  
+- [x] Display simple **D3 Force Graph** for user interactions.  
 
 ---
 
