@@ -19,8 +19,8 @@ export async function GET() {
         // Transform users into nodes for D3 force graph
         const nodes = users.map(user => ({
           id: user.id,
-          name: user.name,
-          handle: user.handle,
+          name: user.displayName || user.username,
+          handle: user.username,
           followers: user.followers,
           group: Math.floor(user.followers / 5000) + 1, // Group by follower count for coloring
           radius: Math.max(8, Math.min(20, user.followers / 1000)) // Size based on followers
@@ -56,7 +56,8 @@ export async function GET() {
             stats: {
               totalNodes: nodes.length,
               totalLinks: links.length,
-              avgDegree: Object.values(nodeDegrees).reduce((a, b) => a + b, 0) / nodes.length
+              avgDegree: Object.values(nodeDegrees).reduce((a, b) => a + b, 0) / nodes.length,
+              maxDegree: Math.max(...Object.values(nodeDegrees), 0)
             }
           },
           source: 'database'
@@ -107,7 +108,8 @@ export async function GET() {
         stats: {
           totalNodes: nodes.length,
           totalLinks: links.length,
-          avgDegree: Object.values(nodeDegrees).reduce((a, b) => a + b, 0) / nodes.length
+          avgDegree: Object.values(nodeDegrees).reduce((a, b) => a + b, 0) / nodes.length,
+          maxDegree: Math.max(...Object.values(nodeDegrees), 0)
         }
       },
       source: 'mock_data'
