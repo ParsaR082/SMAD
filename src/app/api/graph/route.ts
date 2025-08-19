@@ -31,8 +31,8 @@ export async function GET() {
           source: edge.srcUserId,
           target: edge.dstUserId,
           type: edge.type,
-          weight: edge.weight,
-          value: edge.weight // D3 uses 'value' for link strength
+          weight: 1, // Default weight since Edge model doesn't have weight field
+          value: 1 // D3 uses 'value' for link strength
         }));
 
         // Calculate node degrees (number of connections)
