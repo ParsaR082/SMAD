@@ -89,18 +89,48 @@ const TopHashtagsChart = () => {
 
   return (
     <motion.div 
-      className="bg-card rounded-lg p-6 border border-border hover:border-neon-cyan transition-colors duration-300"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      whileHover={{ scale: 1.02 }}
+      className="bg-gradient-to-br from-card to-secondary rounded-lg p-4 md:p-6 border border-border hover:border-neon-cyan transition-all duration-300 hover:shadow-lg hover:shadow-neon-cyan/20"
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ 
+        duration: 0.6,
+        type: "spring",
+        stiffness: 100,
+        damping: 15
+      }}
+      whileHover={{ 
+        scale: 1.02,
+        y: -4,
+        transition: { duration: 0.2 }
+      }}
     >
-      <h3 className="text-xl font-bold text-card-foreground mb-4 flex items-center">
-        <span className="w-2 h-2 bg-neon-cyan rounded-full mr-3 animate-pulse"></span>
+      <motion.h3 
+        className="text-lg md:text-xl font-bold text-card-foreground mb-3 md:mb-4 flex items-center"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
+        <motion.span 
+          className="w-2 h-2 bg-neon-cyan rounded-full mr-3"
+          animate={{ 
+            scale: [1, 1.2, 1],
+            opacity: [0.7, 1, 0.7]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
         Top Hashtags
-      </h3>
+      </motion.h3>
       
-      <div className="h-80">
+      <motion.div 
+        className="h-64 md:h-80"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.4, duration: 0.6 }}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
@@ -148,11 +178,16 @@ const TopHashtagsChart = () => {
             </defs>
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </motion.div>
       
-      <div className="mt-4 text-sm text-muted-foreground">
+      <motion.div 
+        className="mt-3 md:mt-4 text-xs md:text-sm text-muted-foreground"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6, duration: 0.4 }}
+      >
         Showing top {data.length} most popular hashtags
-      </div>
+      </motion.div>
     </motion.div>
   );
 };

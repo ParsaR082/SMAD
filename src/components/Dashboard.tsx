@@ -6,10 +6,13 @@ import TopHashtagsChart from './charts/TopHashtagsChart';
 import HashtagTrendChart from './charts/HashtagTrendChart';
 import SentimentChart from './charts/SentimentChart';
 import NetworkGraph from './charts/NetworkGraph';
+import FilterBar from './filters/FilterBar';
+import { DashboardSkeleton } from './ui/Skeleton';
 
 const Dashboard = () => {
   const [currentTime, setCurrentTime] = useState('');
   const [lastSync, setLastSync] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const updateTime = () => {
@@ -18,9 +21,18 @@ const Dashboard = () => {
     };
     
     updateTime();
-    const interval = setInterval(updateTime, 1000);
     
-    return () => clearInterval(interval);
+    // Simulate initial loading
+    const loadingTimer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+    
+    const interval = setInterval(updateTime, 600000); // Update every 10 minutes
+    
+    return () => {
+      clearInterval(interval);
+      clearTimeout(loadingTimer);
+    };
   }, []);
 
   const containerVariants = {
@@ -45,25 +57,30 @@ const Dashboard = () => {
     }
   };
 
+  // Show loading skeleton while data is being fetched
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
   return (
     <motion.div 
-      className="min-h-screen bg-background p-6"
+      className="min-h-screen bg-background p-3 sm:p-4 md:p-6"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
     >
       {/* Header */}
       <motion.header 
-        className="mb-8"
+        className="mb-6 md:mb-8"
         variants={itemVariants}
       >
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-foreground mb-2 flex items-center">
-              <span className="w-3 h-3 bg-neon-magenta rounded-full mr-4 animate-pulse"></span>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2 flex items-center">
+              <span className="w-3 h-3 bg-neon-magenta rounded-full mr-3 md:mr-4 animate-pulse"></span>
               Social Media Analytics Dashboard
             </h1>
-            <p className="text-muted-foreground text-lg">
+            <p className="text-muted-foreground text-sm sm:text-base md:text-lg">
               Real-time insights into social media trends, sentiment, and user interactions
             </p>
           </div>
@@ -93,31 +110,54 @@ const Dashboard = () => {
         
         {/* Stats Bar */}
         <motion.div 
-          className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4"
+          className="mt-6 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4"
           variants={itemVariants}
         >
-          <div className="bg-card rounded-lg p-4 border border-border hover:border-neon-magenta transition-colors">
-            <div className="text-2xl font-bold text-neon-magenta">2.4K</div>
+          <motion.div 
+            className="bg-gradient-to-br from-card to-secondary rounded-lg p-4 border border-border hover:border-neon-magenta transition-all duration-300 hover:shadow-lg hover:shadow-neon-magenta/20"
+            whileHover={{ scale: 1.02, y: -2 }}
+          >
+            <div className="text-2xl font-bold text-neon-magenta neon-text">2.4K</div>
             <div className="text-sm text-muted-foreground">Total Posts</div>
-          </div>
-          <div className="bg-card rounded-lg p-4 border border-border hover:border-neon-cyan transition-colors">
-            <div className="text-2xl font-bold text-neon-cyan">156</div>
+          </motion.div>
+          <motion.div 
+            className="bg-gradient-to-br from-card to-secondary rounded-lg p-4 border border-border hover:border-neon-cyan transition-all duration-300 hover:shadow-lg hover:shadow-neon-cyan/20"
+            whileHover={{ scale: 1.02, y: -2 }}
+          >
+            <div className="text-2xl font-bold text-neon-cyan neon-text">156</div>
             <div className="text-sm text-muted-foreground">Active Users</div>
-          </div>
-          <div className="bg-card rounded-lg p-4 border border-border hover:border-neon-green transition-colors">
-            <div className="text-2xl font-bold text-neon-green">89%</div>
+          </motion.div>
+          <motion.div 
+            className="bg-gradient-to-br from-card to-secondary rounded-lg p-4 border border-border hover:border-neon-green transition-all duration-300 hover:shadow-lg hover:shadow-neon-green/20"
+            whileHover={{ scale: 1.02, y: -2 }}
+          >
+            <div className="text-2xl font-bold text-neon-green neon-text">89%</div>
             <div className="text-sm text-muted-foreground">Positive Sentiment</div>
-          </div>
-          <div className="bg-card rounded-lg p-4 border border-border hover:border-neon-yellow transition-colors">
-            <div className="text-2xl font-bold text-neon-yellow">42</div>
+          </motion.div>
+          <motion.div 
+            className="bg-gradient-to-br from-card to-secondary rounded-lg p-4 border border-border hover:border-neon-yellow transition-all duration-300 hover:shadow-lg hover:shadow-neon-yellow/20"
+            whileHover={{ scale: 1.02, y: -2 }}
+          >
+            <div className="text-2xl font-bold text-neon-yellow neon-text">42</div>
             <div className="text-sm text-muted-foreground">Trending Tags</div>
-          </div>
+          </motion.div>
         </motion.div>
       </motion.header>
 
+      {/* Filter Bar */}
+      <motion.div variants={itemVariants}>
+        <FilterBar 
+          onFilterChange={(filters) => {
+            console.log('Filters changed:', filters);
+            // TODO: Implement filter logic for charts
+          }}
+          className="mb-6"
+        />
+      </motion.div>
+
       {/* Main Dashboard Grid */}
       <motion.div 
-        className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+        className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8"
         variants={containerVariants}
       >
         {/* Top Hashtags Chart */}
@@ -143,13 +183,13 @@ const Dashboard = () => {
 
       {/* Additional Insights Section */}
       <motion.section 
-        className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6"
+        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6"
         variants={containerVariants}
       >
         <motion.div 
-          className="bg-card rounded-lg p-6 border border-border hover:border-neon-magenta transition-colors"
+          className="bg-gradient-to-br from-card to-secondary rounded-lg p-6 border border-border hover:border-neon-magenta transition-all duration-300 hover:shadow-lg hover:shadow-neon-magenta/10"
           variants={itemVariants}
-          whileHover={{ scale: 1.02 }}
+          whileHover={{ scale: 1.02, y: -4 }}
         >
           <h3 className="text-lg font-bold text-card-foreground mb-3 flex items-center">
             <span className="w-2 h-2 bg-neon-magenta rounded-full mr-3"></span>
@@ -172,9 +212,9 @@ const Dashboard = () => {
         </motion.div>
 
         <motion.div 
-          className="bg-card rounded-lg p-6 border border-border hover:border-neon-cyan transition-colors"
+          className="bg-gradient-to-br from-card to-secondary rounded-lg p-6 border border-border hover:border-neon-cyan transition-all duration-300 hover:shadow-lg hover:shadow-neon-cyan/10"
           variants={itemVariants}
-          whileHover={{ scale: 1.02 }}
+          whileHover={{ scale: 1.02, y: -4 }}
         >
           <h3 className="text-lg font-bold text-card-foreground mb-3 flex items-center">
             <span className="w-2 h-2 bg-neon-cyan rounded-full mr-3"></span>
@@ -197,9 +237,9 @@ const Dashboard = () => {
         </motion.div>
 
         <motion.div 
-          className="bg-card rounded-lg p-6 border border-border hover:border-neon-green transition-colors"
+          className="bg-gradient-to-br from-card to-secondary rounded-lg p-6 border border-border hover:border-neon-green transition-all duration-300 hover:shadow-lg hover:shadow-neon-green/10"
           variants={itemVariants}
-          whileHover={{ scale: 1.02 }}
+          whileHover={{ scale: 1.02, y: -4 }}
         >
           <h3 className="text-lg font-bold text-card-foreground mb-3 flex items-center">
             <span className="w-2 h-2 bg-neon-green rounded-full mr-3"></span>

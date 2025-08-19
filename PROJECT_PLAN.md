@@ -148,11 +148,11 @@ The final product should provide:
 ---
 
 ### Phase 3: UI/UX Enhancements
-- [ ] Apply **dark theme styling** (Tailwind custom colors).  
-- [ ] Add **Framer Motion animations** to sidebar, filters, and charts.  
-- [ ] Implement **responsive layout** for desktop/tablet/mobile.  
-- [ ] Create reusable **FilterBar** component.  
-- [ ] Add loading states and skeleton UI for better UX.  
+- [x] Apply **dark theme styling** (Tailwind custom colors).  
+- [x] Add **Framer Motion animations** to sidebar, filters, and charts.  
+- [x] Implement **responsive layout** for desktop/tablet/mobile.  
+- [x] Create reusable **FilterBar** component.  
+- [x] Add loading states and skeleton UI for better UX.  
 
 ---
 
