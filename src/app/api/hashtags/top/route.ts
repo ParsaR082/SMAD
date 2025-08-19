@@ -1,9 +1,41 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import mockData from '@/data/mockData.json';
 
 export async function GET() {
   try {
-    // Aggregate hashtag counts from posts
+    // Try to get data from database first
+    try {
+      const hashtagDaily = await prisma.hashtagDaily.groupBy({
+        by: ['hashtag'],
+        _sum: {
+          count: true,
+        },
+        orderBy: {
+          _sum: {
+            count: 'desc',
+          },
+        },
+        take: 10,
+      });
+
+      if (hashtagDaily.length > 0) {
+        const topHashtags = hashtagDaily.map(item => ({
+          name: item.hashtag,
+          value: item._sum.count || 0
+        }));
+
+        return NextResponse.json({
+          success: true,
+          data: topHashtags,
+          source: 'database'
+        });
+      }
+    } catch (dbError) {
+      console.log('Database not available, falling back to mock data:', dbError);
+    }
+
+    // Fallback to mock data if database is not available
     const hashtagCounts: { [key: string]: number } = {};
     
     mockData.posts.forEach(post => {
@@ -20,7 +52,8 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      data: topHashtags
+      data: topHashtags,
+      source: 'mock_data'
     });
   } catch (error) {
     console.error('Error fetching top hashtags:', error);

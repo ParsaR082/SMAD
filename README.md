@@ -24,8 +24,8 @@ A modern, full-stack web application for analyzing social media data with intera
 
 ### Backend
 - **Next.js API Routes** - RESTful API endpoints
-- **MongoDB** - NoSQL database (planned)
-- **Prisma ORM** - Database abstraction layer (planned)
+- **MongoDB** - NoSQL database with Docker Compose
+- **Prisma ORM** - Database abstraction layer with type-safe queries
 
 ### Development Tools
 - **ESLint** - Code linting
@@ -39,6 +39,7 @@ A modern, full-stack web application for analyzing social media data with intera
 - Node.js 18+ 
 - npm or yarn
 - Git
+- Docker and Docker Compose (for MongoDB)
 
 ### Installation
 
@@ -53,12 +54,33 @@ A modern, full-stack web application for analyzing social media data with intera
    npm install
    ```
 
-3. **Run the development server**
+3. **Set up the database**
+   ```bash
+   # Start MongoDB with Docker Compose
+   docker compose -f docker-compose.dev.yml up -d mongo
+   
+   # Initialize Prisma and push schema to database
+   npm run db:push
+   
+   # Generate Prisma client
+   npm run db:generate
+   ```
+
+4. **Configure environment variables**
+   ```bash
+   # Copy the example environment file
+   cp .env.example .env
+   
+   # Update DATABASE_URL in .env if needed
+   # Default: mongodb://admin:password@localhost:27017/smad?authSource=admin
+   ```
+
+5. **Run the development server**
    ```bash
    npm run dev
    ```
 
-4. **Open your browser**
+6. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ### Available Scripts
@@ -67,6 +89,9 @@ A modern, full-stack web application for analyzing social media data with intera
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
+- `npm run db:push` - Push Prisma schema to database
+- `npm run db:generate` - Generate Prisma client
+- `npm run seed` - Seed database with mock data (requires replica set)
 
 ## 📁 Project Structure
 
@@ -83,10 +108,16 @@ src/
 │   └── ui/               # Basic UI components
 ├── hooks/                # Custom React hooks
 ├── lib/                  # Utility functions and configurations
+│   ├── prisma.ts         # Prisma client singleton
 │   └── utils.ts          # Common utilities
 ├── types/                # TypeScript type definitions
 │   └── index.ts          # Main type definitions
 └── utils/                # Additional utility functions
+prisma/
+└── schema.prisma         # Database schema definition
+scripts/
+├── seed.ts              # Database seeding script
+└── test-db.ts           # Database connection test
 ```
 
 ## 🎨 Design System
@@ -117,26 +148,55 @@ src/
 - [x] TypeScript configuration
 - [x] README documentation
 
+### ✅ Phase 2: Mock Data & MVP Visualizations (Completed)
+- [x] Mock data structure and generation
+- [x] Basic dashboard components
+- [x] Chart implementations (bar, line, pie, network)
+- [x] Interactive filtering system
+
+### ✅ Phase 3: Database Integration (Completed)
+- [x] MongoDB setup with Docker Compose
+- [x] Prisma ORM configuration
+- [x] Database schema definition
+- [x] API routes with database integration
+- [x] Graceful fallback to mock data
+
 ### 🚧 Upcoming Phases
-- **Phase 2**: Mock data & MVP visualizations
-- **Phase 3**: UI/UX enhancements
-- **Phase 4**: Database integration
-- **Phase 5**: API development
-- **Phase 6**: Advanced dashboard interactivity
-- **Phase 7**: Sentiment analysis
-- **Phase 8**: Export & reporting
+- **Phase 4**: Data seeding and production setup
+- **Phase 5**: Advanced dashboard interactivity
+- **Phase 6**: Enhanced sentiment analysis
+- **Phase 7**: Export & reporting features
+- **Phase 8**: Performance optimization
 - **Phase 9**: Deployment
 - **Phase 10**: Final polish & QA
 
-## 📊 Data Schema
+## 🗄️ Database Architecture
 
-The application will handle the following data types:
+### Data Models
 
-- **Users**: Social media user profiles
-- **Posts**: Social media posts with metadata
-- **Hashtags**: Trending hashtag analytics
-- **Sentiment**: Sentiment analysis results
-- **Networks**: User interaction graphs
+The application uses MongoDB with Prisma ORM and includes the following models:
+
+- **User**: Social media user profiles with follower counts and metadata
+- **Post**: Social media posts with content, sentiment, and engagement metrics
+- **Edge**: User relationship connections (follows, mentions, etc.)
+- **HashtagDaily**: Daily hashtag usage statistics and trends
+- **SentimentDaily**: Daily sentiment analysis aggregations
+
+### API Endpoints
+
+All API routes support both database queries and mock data fallback:
+
+- `GET /api/hashtags/top` - Top trending hashtags with usage counts
+- `GET /api/hashtags/trend?hashtag=#AI` - Trend data for specific hashtag
+- `GET /api/sentiment/summary` - Sentiment distribution and daily trends
+- `GET /api/graph` - User network graph data (nodes and edges)
+
+### Database Features
+
+- **Graceful Fallback**: All routes automatically fall back to mock data if database is unavailable
+- **Type Safety**: Full TypeScript support with Prisma-generated types
+- **Performance**: Optimized queries with proper indexing and limits
+- **Development Ready**: Docker Compose setup for local development
 
 ## 🤝 Contributing
 

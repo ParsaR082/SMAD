@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:6
+    container_name: smad-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: analytics
+    volumes:
+      - mongo-data:/data/db
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    networks:
+      - smad-network
+    healthcheck:
+      test: |
+        mongosh --eval 'try { rs.status().ok } catch(e) { rs.initiate({_id: "rs0", members: [{_id: 0, host: "localhost:27017"}]}).ok }'
+      interval: 10s
+      start_period: 30s
+
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smad-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=mongodb://mongo:27017/analytics
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - mongo
+    networks:
+      - smad-network
+    command: npm run dev
+
+volumes:
+  mongo-data:
+    driver: local
+
+networks:
+  smad-network:
+    driver: bridge

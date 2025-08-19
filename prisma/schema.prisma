@@ -1,0 +1,110 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum Sentiment {
+  POS
+  NEG
+  NEU
+}
+
+enum EdgeType {
+  mention
+  retweet
+}
+
+// Models
+model User {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  username    String   @unique
+  displayName String?
+  bio         String?
+  followers   Int      @default(0)
+  following   Int      @default(0)
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  posts       Post[]
+  edgesFrom   Edge[]   @relation("EdgeFrom")
+  edgesTo     Edge[]   @relation("EdgeTo")
+
+  @@map("users")
+}
+
+model Post {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  content   String
+  hashtags  String[]
+  mentions  String[]
+  sentiment Sentiment
+  likes     Int      @default(0)
+  retweets  Int      @default(0)
+  replies   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([hashtags])
+  @@index([userId])
+  @@index([sentiment])
+  @@map("posts")
+}
+
+model Edge {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  type      EdgeType
+  createdAt DateTime @default(now())
+
+  // Relations
+  srcUserId String   @db.ObjectId
+  dstUserId String   @db.ObjectId
+  srcUser   User     @relation("EdgeFrom", fields: [srcUserId], references: [id], onDelete: Cascade)
+  dstUser   User     @relation("EdgeTo", fields: [dstUserId], references: [id], onDelete: Cascade)
+
+  @@unique([srcUserId, dstUserId, type])
+  @@index([createdAt])
+  @@map("edges")
+}
+
+model HashtagDaily {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  hashtag  String
+  date     DateTime
+  count    Int      @default(0)
+  reach    Int      @default(0)
+  engagement Int    @default(0)
+
+  @@unique([hashtag, date])
+  @@index([hashtag])
+  @@index([date])
+  @@index([count])
+  @@map("hashtag_daily")
+}
+
+model SentimentDaily {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  date      DateTime
+  sentiment Sentiment
+  count     Int       @default(0)
+  avgScore  Float     @default(0.0)
+
+  @@unique([date, sentiment])
+  @@index([date])
+  @@index([sentiment])
+  @@map("sentiment_daily")
+}

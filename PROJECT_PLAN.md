@@ -157,10 +157,10 @@ The final product should provide:
 ---
 
 ### Phase 4: Database Integration
-- [ ] Deploy MongoDB instance (local or Docker container).  
-- [ ] Define Prisma schema (User, Post, Edge, HashtagDaily, SentimentDaily).  
-- [ ] Run migrations and seed database with mock data.  
-- [ ] Connect Prisma client to Next.js API routes.  
+- [x] Deploy MongoDB instance (local or Docker container).  
+- [x] Define Prisma schema (User, Post, Edge, HashtagDaily, SentimentDaily).  
+- [x] Run migrations and seed database with mock data.  
+- [x] Connect Prisma client to Next.js API routes.  
 
 ---
 
