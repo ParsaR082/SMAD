@@ -78,6 +78,12 @@ const NetworkGraph = () => {
     const width = dimensions.width;
     const height = dimensions.height;
 
+    // Initialize nodes with random positions to avoid clustering at origin
+    data.nodes.forEach(node => {
+      if (!node.x) node.x = Math.random() * width;
+      if (!node.y) node.y = Math.random() * height;
+    });
+
     // Create optimized simulation with maximum spacing
     const simulation = d3.forceSimulation<Node>(data.nodes)
       .force('link', d3.forceLink<Node, Link>(data.links)
@@ -85,11 +91,13 @@ const NetworkGraph = () => {
         .distance(d => 120 + (d.weight * 40)) // Much larger base distance
         .strength(0.15) // Further reduced strength for maximum spacing
       )
-      .force('charge', d3.forceManyBody().strength(-800)) // Much stronger repulsion
+      .force('charge', d3.forceManyBody().strength(-1200)) // Even stronger repulsion
       .force('center', d3.forceCenter(width / 2, height / 2))
       .force('collision', d3.forceCollide().radius(d => 25 + Math.sqrt(d.followers / 600))) // Even larger collision radius
-      .alphaDecay(0.015) // Slower decay for better settling
-      .velocityDecay(0.7); // Lower velocity decay for more movement
+      .alphaDecay(0.01) // Even slower decay for better settling
+      .velocityDecay(0.6) // Lower velocity decay for more movement
+      .alpha(1) // Start with full energy
+      .restart(); // Ensure simulation starts
 
     // Create container group
     const container = svg.append('g');
