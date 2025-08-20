@@ -9,17 +9,18 @@ export async function GET(request: Request) {
     const sentiment = searchParams.get('sentiment'); // positive, negative, neutral
     
     // Calculate date filter based on time range
+    // Using 2024 as base year since mock data is from 2024
     let dateFilter: Date | undefined;
-    const now = new Date();
+    const mockDataBaseDate = new Date('2024-02-10'); // Use end of mock data period
     switch (timeRange) {
       case '24h':
-        dateFilter = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        dateFilter = new Date(mockDataBaseDate.getTime() - 24 * 60 * 60 * 1000);
         break;
       case '7d':
-        dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        dateFilter = new Date(mockDataBaseDate.getTime() - 7 * 24 * 60 * 60 * 1000);
         break;
       case '30d':
-        dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        dateFilter = new Date(mockDataBaseDate.getTime() - 30 * 24 * 60 * 60 * 1000);
         break;
       case 'all':
       default:
@@ -36,24 +37,17 @@ export async function GET(request: Request) {
         };
       }
 
-      const edges = await prisma.edge.findMany({
-        where: edgeWhereClause,
-        take: 500 // Limit for performance
-      });
+      const [users, edges] = await Promise.all([
+        prisma.user.findMany({
+          take: 100 // Limit for performance
+        }),
+        prisma.edge.findMany({
+          where: edgeWhereClause,
+          take: 500 // Limit for performance
+        })
+      ]);
 
-      if (edges.length > 0) {
-        // Fetch users referenced in these edges to ensure full connectivity
-        const userIds = Array.from(
-          new Set(edges.flatMap(edge => [edge.srcUserId, edge.dstUserId]))
-        );
-
-        const users = await prisma.user.findMany({
-          where: {
-            id: { in: userIds }
-          }
-        });
-
-        if (users.length > 0) {
+      if (users.length > 0 && edges.length > 0) {
         // Transform users into nodes for D3 force graph
         const nodes = users.map(user => ({
           id: user.id,
@@ -101,7 +95,6 @@ export async function GET(request: Request) {
           source: 'database'
         });
       }
-      }
     } catch (dbError) {
       console.log('Database not available, falling back to mock data:', dbError);
     }
@@ -130,8 +123,20 @@ export async function GET(request: Request) {
       return true;
     });
     
-    // Get unique user IDs from filtered posts
-    const activeUserIds = new Set(filteredPosts.map(post => post.userId));
+    // Filter edges based on time range
+    const filteredEdges = mockData.edges.filter(edge => {
+      // Apply time filter using timestamp field from edges
+      if (dateFilter && new Date(edge.timestamp) < dateFilter) {
+        return false;
+      }
+      return true;
+    });
+    
+    // Get unique user IDs from both filtered posts and edges
+    const activeUserIds = new Set([
+      ...filteredPosts.map(post => post.userId),
+      ...filteredEdges.flatMap(edge => [edge.srcUserId, edge.dstUserId])
+    ]);
     
     // Transform users into nodes for D3 force graph (only include active users)
     const nodes = mockData.users
@@ -146,7 +151,7 @@ export async function GET(request: Request) {
       }));
 
     // Transform edges into links for D3 force graph (only include edges between active users)
-    const links = mockData.edges
+    const links = filteredEdges
       .filter(edge => activeUserIds.has(edge.srcUserId) && activeUserIds.has(edge.dstUserId))
       .map(edge => ({
         source: edge.srcUserId,
@@ -176,7 +181,7 @@ export async function GET(request: Request) {
         links: links,
         stats: {
           totalNodes: nodes.length,
-          totalEdges: links.length,
+          totalLinks: links.length,
           avgDegree: Object.values(nodeDegrees).reduce((a, b) => a + b, 0) / nodes.length,
           maxDegree: Math.max(...Object.values(nodeDegrees), 0)
         }
