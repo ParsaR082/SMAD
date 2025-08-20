@@ -4,15 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { motion } from 'framer-motion';
 
-interface Node {
+interface Node extends d3.SimulationNodeDatum {
   id: string;
   name: string;
   followers: number;
   degree: number;
-  x?: number;
-  y?: number;
-  fx?: number | null;
-  fy?: number | null;
 }
 
 interface Link {
@@ -37,7 +33,15 @@ interface ApiResponse {
   data: GraphData;
 }
 
-const NetworkGraph = () => {
+interface NetworkGraphProps {
+  filters?: {
+    timeRange?: string;
+    sentiment?: string;
+    hashtag?: string;
+  };
+}
+
+const NetworkGraph = ({ filters }: NetworkGraphProps) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [data, setData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,7 +54,12 @@ const NetworkGraph = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await fetch('/api/graph');
+        const params = new URLSearchParams();
+        if (filters?.timeRange) params.append('timeRange', filters.timeRange);
+        if (filters?.sentiment) params.append('sentiment', filters.sentiment);
+        
+        const url = `/api/graph${params.toString() ? `?${params.toString()}` : ''}`;
+        const response = await fetch(url);
         const result: ApiResponse = await response.json();
         
         if (result.success) {
@@ -67,7 +76,7 @@ const NetworkGraph = () => {
     };
 
     fetchData();
-  }, []);
+  }, [filters]);
 
   useEffect(() => {
     if (!data || !svgRef.current) return;
@@ -108,7 +117,7 @@ const NetworkGraph = () => {
       .on('zoom', (event) => {
         const { transform } = event;
         container.attr('transform', transform);
-        setCurrentZoom(transform.k);
+        setCurrentZoom(transform.k || 1);
         
         // Scale nodes smaller when zooming in for better detail view
         const nodeScale = Math.max(0.3, Math.min(1.2, 1 / Math.sqrt(transform.k)));
@@ -322,7 +331,7 @@ const NetworkGraph = () => {
           <div className="flex gap-4 text-sm text-muted-foreground">
             <span>Nodes: <span className="text-neon-green font-medium">{data.stats.totalNodes}</span></span>
             <span>Edges: <span className="text-neon-green font-medium">{data.stats.totalEdges}</span></span>
-            <span>Avg Degree: <span className="text-neon-green font-medium">{data.stats.avgDegree.toFixed(1)}</span></span>
+            <span>Avg Degree: <span className="text-neon-green font-medium">{(data.stats.avgDegree || 0).toFixed(1)}</span></span>
           </div>
         )}
       </div>
@@ -378,7 +387,7 @@ const NetworkGraph = () => {
         
         {/* Zoom Level Indicator */}
         <div className="absolute bottom-4 left-4 bg-card border border-border rounded px-2 py-1 text-xs text-muted-foreground">
-          Zoom: {(currentZoom * 100).toFixed(0)}%
+          Zoom: {((currentZoom || 1) * 100).toFixed(0)}%
         </div>
         
         {selectedNode && (

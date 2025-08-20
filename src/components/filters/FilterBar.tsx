@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 interface FilterOption {
@@ -12,14 +12,19 @@ interface FilterOption {
 interface FilterBarProps {
   onFilterChange?: (filters: Record<string, string>) => void;
   className?: string;
+  initialFilters?: Record<string, string>;
 }
 
-const FilterBar = ({ onFilterChange, className = '' }: FilterBarProps) => {
-  const [activeFilters, setActiveFilters] = useState<Record<string, string>>({});
+const FilterBar = ({ onFilterChange, className = '', initialFilters = {} }: FilterBarProps) => {
+  const [activeFilters, setActiveFilters] = useState<Record<string, string>>(initialFilters);
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Sync with prop changes
+  useEffect(() => {
+    setActiveFilters(initialFilters);
+  }, [initialFilters]);
+
   const timeRangeOptions: FilterOption[] = [
-    { id: 'time-1h', label: 'Last Hour', value: '1h' },
     { id: 'time-24h', label: 'Last 24 Hours', value: '24h' },
     { id: 'time-7d', label: 'Last 7 Days', value: '7d' },
     { id: 'time-30d', label: 'Last 30 Days', value: '30d' },
@@ -32,12 +37,14 @@ const FilterBar = ({ onFilterChange, className = '' }: FilterBarProps) => {
     { id: 'sentiment-neg', label: 'Negative', value: 'negative' },
   ];
 
-  const platformOptions: FilterOption[] = [
-    { id: 'platform-all', label: 'All Platforms', value: 'all' },
-    { id: 'platform-twitter', label: 'Twitter', value: 'twitter' },
-    { id: 'platform-instagram', label: 'Instagram', value: 'instagram' },
-    { id: 'platform-linkedin', label: 'LinkedIn', value: 'linkedin' },
+  const hashtagOptions: FilterOption[] = [
+    { id: 'hashtag-ai', label: '#AI', value: '#AI' },
+    { id: 'hashtag-webdev', label: '#WebDev', value: '#WebDev' },
+    { id: 'hashtag-blockchain', label: '#Blockchain', value: '#Blockchain' },
+    { id: 'hashtag-ml', label: '#MachineLearning', value: '#MachineLearning' },
   ];
+
+
 
   const handleFilterChange = (category: string, value: string) => {
     const newFilters = { ...activeFilters, [category]: value };
@@ -142,7 +149,7 @@ const FilterBar = ({ onFilterChange, className = '' }: FilterBarProps) => {
         }}
         className="overflow-hidden"
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4">
           {/* Time Range Filter */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -199,24 +206,24 @@ const FilterBar = ({ onFilterChange, className = '' }: FilterBarProps) => {
             </div>
           </motion.div>
 
-          {/* Platform Filter */}
+          {/* Hashtag Filter */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3, duration: 0.4 }}
           >
             <label className="block text-sm font-medium text-muted-foreground mb-2">
-              Platform
+              Hashtag
             </label>
             <div className="space-y-2">
-              {platformOptions.map((option) => (
+              {hashtagOptions.map((option) => (
                 <motion.button
                   key={option.id}
-                  onClick={() => handleFilterChange('platform', option.value)}
+                  onClick={() => handleFilterChange('hashtag', option.value)}
                   className={`w-full text-left px-3 py-2 rounded-md text-sm transition-all duration-200 ${
-                    activeFilters.platform === option.value
-                      ? 'bg-neon-green text-black font-medium'
-                      : 'bg-secondary text-secondary-foreground hover:bg-neon-green hover:text-black'
+                    activeFilters.hashtag === option.value
+                      ? 'bg-neon-cyan text-black font-medium'
+                      : 'bg-secondary text-secondary-foreground hover:bg-neon-cyan hover:text-black'
                   }`}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -226,6 +233,7 @@ const FilterBar = ({ onFilterChange, className = '' }: FilterBarProps) => {
               ))}
             </div>
           </motion.div>
+
         </div>
       </motion.div>
 
@@ -246,8 +254,8 @@ const FilterBar = ({ onFilterChange, className = '' }: FilterBarProps) => {
                 if (category === 'sentiment') {
                   return sentimentOptions.find(opt => opt.value === value)?.label || value;
                 }
-                if (category === 'platform') {
-                  return platformOptions.find(opt => opt.value === value)?.label || value;
+                if (category === 'hashtag') {
+                  return hashtagOptions.find(opt => opt.value === value)?.label || value;
                 }
                 return value;
               };

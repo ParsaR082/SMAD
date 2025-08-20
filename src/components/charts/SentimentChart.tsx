@@ -20,7 +20,15 @@ interface ApiResponse {
   };
 }
 
-const SentimentChart = () => {
+interface SentimentChartProps {
+  filters?: {
+    timeRange?: string;
+    sentiment?: string;
+    hashtag?: string;
+  };
+}
+
+const SentimentChart = ({ filters }: SentimentChartProps) => {
   const [data, setData] = useState<SentimentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +39,11 @@ const SentimentChart = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await fetch('/api/sentiment/summary');
+        const params = new URLSearchParams();
+        if (filters?.timeRange) params.append('timeRange', filters.timeRange);
+        
+        const url = `/api/sentiment/summary${params.toString() ? `?${params.toString()}` : ''}`;
+        const response = await fetch(url);
         const result: ApiResponse = await response.json();
         
         if (result.success) {
@@ -49,7 +61,7 @@ const SentimentChart = () => {
     };
 
     fetchData();
-  }, []);
+  }, [filters]);
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {

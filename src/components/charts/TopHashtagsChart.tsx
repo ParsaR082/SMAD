@@ -14,7 +14,15 @@ interface ApiResponse {
   data: HashtagData[];
 }
 
-const TopHashtagsChart = () => {
+interface TopHashtagsChartProps {
+  filters?: {
+    timeRange?: string;
+    sentiment?: string;
+    hashtag?: string;
+  };
+}
+
+const TopHashtagsChart = ({ filters }: TopHashtagsChartProps) => {
   const [data, setData] = useState<HashtagData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +30,12 @@ const TopHashtagsChart = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/hashtags/top');
+        const params = new URLSearchParams();
+        if (filters?.timeRange) params.append('timeRange', filters.timeRange);
+        if (filters?.sentiment) params.append('sentiment', filters.sentiment);
+        
+        const url = `/api/hashtags/top${params.toString() ? `?${params.toString()}` : ''}`;
+        const response = await fetch(url);
         const result: ApiResponse = await response.json();
         
         if (result.success) {
@@ -39,7 +52,7 @@ const TopHashtagsChart = () => {
     };
 
     fetchData();
-  }, []);
+  }, [filters]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {

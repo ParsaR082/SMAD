@@ -2,15 +2,46 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import mockData from '@/data/mockData.json';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const timeRange = searchParams.get('timeRange') || '7d'; // 24h, 7d, 30d, all
+    const sentiment = searchParams.get('sentiment'); // positive, negative, neutral
+    
+    // Calculate date filter based on time range
+    let dateFilter: Date | undefined;
+    const now = new Date();
+    switch (timeRange) {
+      case '24h':
+        dateFilter = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case '7d':
+        dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case 'all':
+      default:
+        dateFilter = undefined;
+        break;
+    }
+
     // Try to get data from database first
     try {
+      const edgeWhereClause: any = {};
+      if (dateFilter) {
+        edgeWhereClause.createdAt = {
+          gte: dateFilter
+        };
+      }
+
       const [users, edges] = await Promise.all([
         prisma.user.findMany({
           take: 100 // Limit for performance
         }),
         prisma.edge.findMany({
+          where: edgeWhereClause,
           take: 500 // Limit for performance
         })
       ]);
@@ -68,24 +99,54 @@ export async function GET() {
     }
 
     // Fallback to mock data if database is not available
-    // Transform users into nodes for D3 force graph
-    const nodes = mockData.users.map(user => ({
-      id: user.id,
-      name: user.name,
-      handle: user.handle,
-      followers: user.followers,
-      group: Math.floor(user.followers / 5000) + 1, // Group by follower count for coloring
-      radius: Math.max(8, Math.min(20, user.followers / 1000)) // Size based on followers
-    }));
+    // Map sentiment filter to mock data format
+    const sentimentMap: { [key: string]: string } = {
+      'positive': 'POS',
+      'neutral': 'NEU', 
+      'negative': 'NEG'
+    };
+    const mappedSentiment = sentiment && sentiment !== 'all' ? sentimentMap[sentiment] : null;
+    
+    // Filter posts based on time and sentiment to get relevant users
+    const filteredPosts = mockData.posts.filter(post => {
+      // Apply time filter
+      if (dateFilter && new Date(post.createdAt) < dateFilter) {
+        return false;
+      }
+      
+      // Apply sentiment filter
+      if (mappedSentiment && post.sentiment !== mappedSentiment) {
+        return false;
+      }
+      
+      return true;
+    });
+    
+    // Get unique user IDs from filtered posts
+    const activeUserIds = new Set(filteredPosts.map(post => post.userId));
+    
+    // Transform users into nodes for D3 force graph (only include active users)
+    const nodes = mockData.users
+      .filter(user => activeUserIds.has(user.id))
+      .map(user => ({
+        id: user.id,
+        name: user.name,
+        handle: user.handle,
+        followers: user.followers,
+        group: Math.floor(user.followers / 5000) + 1, // Group by follower count for coloring
+        radius: Math.max(8, Math.min(20, user.followers / 1000)) // Size based on followers
+      }));
 
-    // Transform edges into links for D3 force graph
-    const links = mockData.edges.map(edge => ({
-      source: edge.srcUserId,
-      target: edge.dstUserId,
-      type: edge.type,
-      weight: edge.weight,
-      value: edge.weight // D3 uses 'value' for link strength
-    }));
+    // Transform edges into links for D3 force graph (only include edges between active users)
+    const links = mockData.edges
+      .filter(edge => activeUserIds.has(edge.srcUserId) && activeUserIds.has(edge.dstUserId))
+      .map(edge => ({
+        source: edge.srcUserId,
+        target: edge.dstUserId,
+        type: edge.type,
+        weight: edge.weight,
+        value: edge.weight // D3 uses 'value' for link strength
+      }));
 
     // Calculate node degrees (number of connections)
     const nodeDegrees: { [key: string]: number } = {};

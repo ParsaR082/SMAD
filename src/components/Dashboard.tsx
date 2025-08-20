@@ -13,6 +13,11 @@ const Dashboard = () => {
   const [currentTime, setCurrentTime] = useState('');
   const [lastSync, setLastSync] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [filters, setFilters] = useState({
+    timeRange: '7d',
+    sentiment: '',
+    hashtag: '#AI'
+  });
 
   useEffect(() => {
     const updateTime = () => {
@@ -147,9 +152,10 @@ const Dashboard = () => {
       {/* Filter Bar */}
       <motion.div variants={itemVariants}>
         <FilterBar 
-          onFilterChange={(filters) => {
-            console.log('Filters changed:', filters);
-            // TODO: Implement filter logic for charts
+          initialFilters={filters}
+          onFilterChange={(newFilters) => {
+            console.log('Filters changed:', newFilters);
+            setFilters(prev => ({ ...prev, ...newFilters }));
           }}
           className="mb-6"
         />
@@ -162,22 +168,27 @@ const Dashboard = () => {
       >
         {/* Top Hashtags Chart */}
         <motion.div variants={itemVariants}>
-          <TopHashtagsChart />
+          <TopHashtagsChart filters={filters} />
         </motion.div>
 
         {/* Hashtag Trend Chart */}
         <motion.div variants={itemVariants}>
-          <HashtagTrendChart />
+          <HashtagTrendChart 
+            filters={filters} 
+            onFilterChange={(newFilters) => {
+              setFilters(prev => ({ ...prev, ...newFilters }));
+            }}
+          />
         </motion.div>
 
         {/* Sentiment Chart */}
         <motion.div variants={itemVariants}>
-          <SentimentChart />
+          <SentimentChart filters={filters} />
         </motion.div>
 
         {/* Network Graph */}
         <motion.div variants={itemVariants}>
-          <NetworkGraph />
+          <NetworkGraph filters={filters} />
         </motion.div>
       </motion.div>
 

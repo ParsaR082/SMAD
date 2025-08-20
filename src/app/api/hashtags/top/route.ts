@@ -2,12 +2,44 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import mockData from '@/data/mockData.json';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const timeRange = searchParams.get('timeRange') || '7d'; // 24h, 7d, 30d, all
+    const sentiment = searchParams.get('sentiment'); // positive, negative, neutral
+    
+    // Calculate date filter based on time range
+    // Using 2024 as base year since mock data is from 2024
+    let dateFilter: Date | undefined;
+    const mockDataBaseDate = new Date('2024-02-10'); // Use end of 2024 to work with mock data
+    switch (timeRange) {
+      case '24h':
+        dateFilter = new Date(mockDataBaseDate.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case '7d':
+        dateFilter = new Date(mockDataBaseDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        dateFilter = new Date(mockDataBaseDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case 'all':
+      default:
+        dateFilter = undefined;
+        break;
+    }
+
     // Try to get data from database first
     try {
+      const whereClause: any = {};
+      if (dateFilter) {
+        whereClause.date = {
+          gte: dateFilter
+        };
+      }
+
       const hashtagDaily = await prisma.hashtagDaily.groupBy({
         by: ['hashtag'],
+        where: whereClause,
         _sum: {
           count: true,
         },
@@ -38,7 +70,25 @@ export async function GET() {
     // Fallback to mock data if database is not available
     const hashtagCounts: { [key: string]: number } = {};
     
+    // Map sentiment filter to mock data format
+    const sentimentMap: { [key: string]: string } = {
+      'positive': 'POS',
+      'neutral': 'NEU', 
+      'negative': 'NEG'
+    };
+    const mappedSentiment = sentiment && sentiment !== 'all' ? sentimentMap[sentiment] : null;
+    
     mockData.posts.forEach(post => {
+      // Apply time filter
+      if (dateFilter && new Date(post.createdAt) < dateFilter) {
+        return;
+      }
+      
+      // Apply sentiment filter
+      if (mappedSentiment && post.sentiment !== mappedSentiment) {
+        return;
+      }
+      
       post.hashtags.forEach(hashtag => {
         hashtagCounts[hashtag] = (hashtagCounts[hashtag] || 0) + 1;
       });

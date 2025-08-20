@@ -2,24 +2,67 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import mockData from '@/data/mockData.json';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const timeRange = searchParams.get('timeRange') || '7d'; // 24h, 7d, 30d, all
+    
+    // Calculate date filter based on time range
+    let dateFilter: Date | undefined;
+    let trendDays = 30;
+    const now = new Date();
+    switch (timeRange) {
+      case '24h':
+        dateFilter = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        trendDays = 1;
+        break;
+      case '7d':
+        dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        trendDays = 7;
+        break;
+      case '30d':
+        dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        trendDays = 30;
+        break;
+      case 'all':
+      default:
+        dateFilter = undefined;
+        trendDays = 365; // Show up to 1 year for 'all'
+        break;
+    }
+
     // Try to get data from database first
     try {
+      const whereClause: any = {};
+      if (dateFilter) {
+        whereClause.createdAt = {
+          gte: dateFilter
+        };
+      }
+
+      const trendWhereClause: any = {};
+      if (dateFilter) {
+        trendWhereClause.date = {
+          gte: dateFilter
+        };
+      }
+
       const [sentimentCounts, dailyTrends] = await Promise.all([
         // Get sentiment distribution from posts
         prisma.post.groupBy({
           by: ['sentiment'],
+          where: whereClause,
           _count: {
             sentiment: true,
           },
         }),
         // Get daily sentiment trends
         prisma.sentimentDaily.findMany({
+          where: trendWhereClause,
           orderBy: {
             date: 'asc',
           },
-          take: 30, // Last 30 days
+          take: trendDays,
         })
       ]);
 

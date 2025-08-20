@@ -16,19 +16,41 @@ interface ApiResponse {
   hashtag: string;
 }
 
-const HashtagTrendChart = () => {
+interface HashtagTrendChartProps {
+  filters?: {
+    timeRange?: string;
+    sentiment?: string;
+    hashtag?: string;
+  };
+  onFilterChange?: (filters: Record<string, string>) => void;
+}
+
+const HashtagTrendChart = ({ filters, onFilterChange }: HashtagTrendChartProps) => {
   const [data, setData] = useState<TrendData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedHashtag, setSelectedHashtag] = useState('#AI');
+  const [selectedHashtag, setSelectedHashtag] = useState(filters?.hashtag || '#AI');
   
   const availableHashtags = ['#AI', '#WebDev', '#Blockchain', '#MachineLearning'];
+
+  // Sync selectedHashtag with filters prop
+  useEffect(() => {
+    if (filters?.hashtag && filters.hashtag !== selectedHashtag) {
+      setSelectedHashtag(filters.hashtag);
+    }
+  }, [filters?.hashtag]);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/hashtags/trend?hashtag=${encodeURIComponent(selectedHashtag)}`);
+        const params = new URLSearchParams();
+        const hashtag = filters?.hashtag || selectedHashtag;
+        params.append('hashtag', hashtag);
+        if (filters?.timeRange) params.append('timeRange', filters.timeRange);
+        if (filters?.sentiment) params.append('sentiment', filters.sentiment);
+        
+        const response = await fetch(`/api/hashtags/trend?${params.toString()}`);
         const result: ApiResponse = await response.json();
         
         if (result.success) {
@@ -45,7 +67,7 @@ const HashtagTrendChart = () => {
     };
 
     fetchData();
-  }, [selectedHashtag]);
+  }, [selectedHashtag, filters]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -126,7 +148,10 @@ const HashtagTrendChart = () => {
           {availableHashtags.map((hashtag) => (
             <motion.button
               key={hashtag}
-              onClick={() => setSelectedHashtag(hashtag)}
+              onClick={() => {
+                setSelectedHashtag(hashtag);
+                onFilterChange?.({ hashtag });
+              }}
               className={`px-3 py-1 rounded-full text-sm font-medium transition-all duration-200 ${
                 selectedHashtag === hashtag
                   ? 'bg-neon-magenta text-black'
