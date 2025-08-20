@@ -7,6 +7,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const timeRange = searchParams.get('timeRange') || '7d'; // 24h, 7d, 30d, all
     const sentiment = searchParams.get('sentiment'); // positive, negative, neutral
+    const userFilter = searchParams.get('user'); // user search filter
     
     // Calculate date filter based on time range
     // Using 2024 as base year since mock data is from 2024
@@ -78,7 +79,23 @@ export async function GET(request: Request) {
     };
     const mappedSentiment = sentiment && sentiment !== 'all' ? sentimentMap[sentiment] : null;
     
+    // Filter users if user search is provided
+    let filteredUserIds: Set<string> | null = null;
+    if (userFilter) {
+      const searchTerm = userFilter.toLowerCase();
+      const matchingUsers = mockData.users.filter(user => 
+        user.handle.toLowerCase().includes(searchTerm) ||
+        user.name.toLowerCase().includes(searchTerm)
+      );
+      filteredUserIds = new Set(matchingUsers.map(user => user.id));
+    }
+    
     mockData.posts.forEach(post => {
+      // Apply user filter
+      if (filteredUserIds && !filteredUserIds.has(post.userId)) {
+        return;
+      }
+      
       // Apply time filter
       if (dateFilter && new Date(post.createdAt) < dateFilter) {
         return;

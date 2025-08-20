@@ -38,6 +38,7 @@ interface NetworkGraphProps {
     timeRange?: string;
     sentiment?: string;
     hashtag?: string;
+    user?: string;
   };
 }
 
@@ -57,6 +58,7 @@ const NetworkGraph = ({ filters }: NetworkGraphProps) => {
         const params = new URLSearchParams();
         if (filters?.timeRange) params.append('timeRange', filters.timeRange);
         if (filters?.sentiment) params.append('sentiment', filters.sentiment);
+        if (filters?.user) params.append('user', filters.user);
         
         const url = `/api/graph${params.toString() ? `?${params.toString()}` : ''}`;
         const response = await fetch(url);
@@ -93,9 +95,19 @@ const NetworkGraph = ({ filters }: NetworkGraphProps) => {
       if (!node.y) node.y = Math.random() * height;
     });
 
+    // Create a set of valid node IDs for validation
+    const nodeIds = new Set(data.nodes.map(node => node.id));
+    
+    // Filter out links that reference non-existent nodes
+    const validLinks = data.links.filter(link => {
+      const sourceId = typeof link.source === 'string' ? link.source : link.source.id;
+      const targetId = typeof link.target === 'string' ? link.target : link.target.id;
+      return nodeIds.has(sourceId) && nodeIds.has(targetId);
+    });
+
     // Create optimized simulation with maximum spacing
     const simulation = d3.forceSimulation<Node>(data.nodes)
-      .force('link', d3.forceLink<Node, Link>(data.links)
+      .force('link', d3.forceLink<Node, Link>(validLinks)
         .id(d => d.id)
         .distance(d => 120 + (d.weight * 40)) // Much larger base distance
         .strength(0.15) // Further reduced strength for maximum spacing
@@ -139,7 +151,7 @@ const NetworkGraph = ({ filters }: NetworkGraphProps) => {
     // Create links
     const links = container.append('g')
       .selectAll('line')
-      .data(data.links)
+      .data(validLinks)
       .enter().append('line')
       .attr('stroke', '#333')
       .attr('stroke-opacity', 0.6)

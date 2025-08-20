@@ -25,6 +25,7 @@ interface SentimentChartProps {
     timeRange?: string;
     sentiment?: string;
     hashtag?: string;
+    user?: string;
   };
 }
 
@@ -41,6 +42,7 @@ const SentimentChart = ({ filters }: SentimentChartProps) => {
       try {
         const params = new URLSearchParams();
         if (filters?.timeRange) params.append('timeRange', filters.timeRange);
+        if (filters?.user) params.append('user', filters.user);
         
         const url = `/api/sentiment/summary${params.toString() ? `?${params.toString()}` : ''}`;
         const response = await fetch(url);

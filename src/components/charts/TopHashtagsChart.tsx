@@ -19,6 +19,7 @@ interface TopHashtagsChartProps {
     timeRange?: string;
     sentiment?: string;
     hashtag?: string;
+    user?: string;
   };
 }
 
@@ -33,6 +34,7 @@ const TopHashtagsChart = ({ filters }: TopHashtagsChartProps) => {
         const params = new URLSearchParams();
         if (filters?.timeRange) params.append('timeRange', filters.timeRange);
         if (filters?.sentiment) params.append('sentiment', filters.sentiment);
+        if (filters?.user) params.append('user', filters.user);
         
         const url = `/api/hashtags/top${params.toString() ? `?${params.toString()}` : ''}`;
         const response = await fetch(url);

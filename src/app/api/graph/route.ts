@@ -7,6 +7,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const timeRange = searchParams.get('timeRange') || '7d'; // 24h, 7d, 30d, all
     const sentiment = searchParams.get('sentiment'); // positive, negative, neutral
+    const userFilter = searchParams.get('user'); // user search filter
     
     // Calculate date filter based on time range
     // Using 2024 as base year since mock data is from 2024
@@ -37,8 +38,18 @@ export async function GET(request: Request) {
         };
       }
 
+      // Build user filter clause
+      const userWhereClause: any = {};
+      if (userFilter) {
+        userWhereClause.OR = [
+          { username: { contains: userFilter, mode: 'insensitive' } },
+          { displayName: { contains: userFilter, mode: 'insensitive' } }
+        ];
+      }
+
       const [users, edges] = await Promise.all([
         prisma.user.findMany({
+          where: userWhereClause,
           take: 100 // Limit for performance
         }),
         prisma.edge.findMany({
@@ -108,8 +119,26 @@ export async function GET(request: Request) {
     };
     const mappedSentiment = sentiment && sentiment !== 'all' ? sentimentMap[sentiment] : null;
     
-    // Filter posts based on time and sentiment to get relevant users
+    // Filter users based on user search
+    let filteredUsers = mockData.users;
+    if (userFilter) {
+      const searchTerm = userFilter.toLowerCase();
+      filteredUsers = mockData.users.filter(user => 
+        user.handle.toLowerCase().includes(searchTerm) ||
+        user.name.toLowerCase().includes(searchTerm)
+      );
+    }
+    
+    // Get user IDs for filtering
+    const filteredUserIds = new Set(filteredUsers.map(user => user.id));
+    
+    // Filter posts based on time, sentiment, and user filter
     const filteredPosts = mockData.posts.filter(post => {
+      // Apply user filter
+      if (userFilter && !filteredUserIds.has(post.userId)) {
+        return false;
+      }
+      
       // Apply time filter
       if (dateFilter && new Date(post.createdAt) < dateFilter) {
         return false;
@@ -123,8 +152,13 @@ export async function GET(request: Request) {
       return true;
     });
     
-    // Filter edges based on time range
+    // Filter edges based on time range and user filter
     const filteredEdges = mockData.edges.filter(edge => {
+      // Apply user filter - include edge if either source or destination user matches
+      if (userFilter && !filteredUserIds.has(edge.srcUserId) && !filteredUserIds.has(edge.dstUserId)) {
+        return false;
+      }
+      
       // Apply time filter using timestamp field from edges
       if (dateFilter && new Date(edge.timestamp) < dateFilter) {
         return false;

@@ -18,6 +18,7 @@ interface FilterBarProps {
 const FilterBar = ({ onFilterChange, className = '', initialFilters = {} }: FilterBarProps) => {
   const [activeFilters, setActiveFilters] = useState<Record<string, string>>(initialFilters);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [userSearchInput, setUserSearchInput] = useState(initialFilters.user || '');
 
   // Sync with prop changes
   useEffect(() => {
@@ -149,7 +150,7 @@ const FilterBar = ({ onFilterChange, className = '', initialFilters = {} }: Filt
         }}
         className="overflow-hidden"
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-4">
           {/* Time Range Filter */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -234,6 +235,54 @@ const FilterBar = ({ onFilterChange, className = '', initialFilters = {} }: Filt
             </div>
           </motion.div>
 
+          {/* User Search Filter */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4, duration: 0.4 }}
+          >
+            <label className="block text-sm font-medium text-muted-foreground mb-2">
+              Search Users
+            </label>
+            <div className="relative">
+              <motion.input
+                type="text"
+                value={userSearchInput}
+                onChange={(e) => {
+                  setUserSearchInput(e.target.value);
+                  if (e.target.value.trim()) {
+                    handleFilterChange('user', e.target.value.trim());
+                  } else {
+                    // Remove user filter if input is empty
+                    const newFilters = { ...activeFilters };
+                    delete newFilters.user;
+                    setActiveFilters(newFilters);
+                    onFilterChange?.(newFilters);
+                  }
+                }}
+                placeholder="Enter username or @handle"
+                className="w-full px-3 py-2 bg-secondary text-secondary-foreground rounded-md border border-border focus:border-neon-green focus:outline-none focus:ring-2 focus:ring-neon-green/20 transition-all duration-200 text-sm"
+                whileFocus={{ scale: 1.02 }}
+              />
+              {userSearchInput && (
+                <motion.button
+                  onClick={() => {
+                    setUserSearchInput('');
+                    const newFilters = { ...activeFilters };
+                    delete newFilters.user;
+                    setActiveFilters(newFilters);
+                    onFilterChange?.(newFilters);
+                  }}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-neon-magenta transition-colors"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  ×
+                </motion.button>
+              )}
+            </div>
+          </motion.div>
+
         </div>
       </motion.div>
 
@@ -256,6 +305,9 @@ const FilterBar = ({ onFilterChange, className = '', initialFilters = {} }: Filt
                 }
                 if (category === 'hashtag') {
                   return hashtagOptions.find(opt => opt.value === value)?.label || value;
+                }
+                if (category === 'user') {
+                  return `User: ${value}`;
                 }
                 return value;
               };
