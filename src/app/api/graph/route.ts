@@ -36,17 +36,24 @@ export async function GET(request: Request) {
         };
       }
 
-      const [users, edges] = await Promise.all([
-        prisma.user.findMany({
-          take: 100 // Limit for performance
-        }),
-        prisma.edge.findMany({
-          where: edgeWhereClause,
-          take: 500 // Limit for performance
-        })
-      ]);
+      const edges = await prisma.edge.findMany({
+        where: edgeWhereClause,
+        take: 500 // Limit for performance
+      });
 
-      if (users.length > 0 && edges.length > 0) {
+      if (edges.length > 0) {
+        // Fetch users referenced in these edges to ensure full connectivity
+        const userIds = Array.from(
+          new Set(edges.flatMap(edge => [edge.srcUserId, edge.dstUserId]))
+        );
+
+        const users = await prisma.user.findMany({
+          where: {
+            id: { in: userIds }
+          }
+        });
+
+        if (users.length > 0) {
         // Transform users into nodes for D3 force graph
         const nodes = users.map(user => ({
           id: user.id,
@@ -86,13 +93,14 @@ export async function GET(request: Request) {
             links: links,
             stats: {
               totalNodes: nodes.length,
-              totalLinks: links.length,
+              totalEdges: links.length,
               avgDegree: Object.values(nodeDegrees).reduce((a, b) => a + b, 0) / nodes.length,
               maxDegree: Math.max(...Object.values(nodeDegrees), 0)
             }
           },
           source: 'database'
         });
+      }
       }
     } catch (dbError) {
       console.log('Database not available, falling back to mock data:', dbError);
@@ -168,7 +176,7 @@ export async function GET(request: Request) {
         links: links,
         stats: {
           totalNodes: nodes.length,
-          totalLinks: links.length,
+          totalEdges: links.length,
           avgDegree: Object.values(nodeDegrees).reduce((a, b) => a + b, 0) / nodes.length,
           maxDegree: Math.max(...Object.values(nodeDegrees), 0)
         }
