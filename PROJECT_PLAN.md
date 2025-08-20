@@ -165,10 +165,10 @@ The final product should provide:
 ---
 
 ### Phase 5: API Development
-- [ ] `/api/hashtags/top` → fetch most popular hashtags.  
-- [ ] `/api/hashtags/trend` → fetch time-series data for hashtags.  
-- [ ] `/api/sentiment/summary` → fetch global or filtered sentiment.  
-- [ ] `/api/graph` → fetch user interaction network data.  
+- [x] `/api/hashtags/top` → fetch most popular hashtags.  
+- [x] `/api/hashtags/trend` → fetch time-series data for hashtags.  
+- [x] `/api/sentiment/summary` → fetch global or filtered sentiment.  
+- [x] `/api/graph` → fetch user interaction network data.  
 
 ---
 
