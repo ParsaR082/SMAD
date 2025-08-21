@@ -51,13 +51,13 @@ export interface SentimentDaily {
 export interface ChartData {
   name: string;
   value: number;
-  [key: string]: any;
+  [key: string]: string | number | boolean | undefined;
 }
 
 export interface TimeSeriesData {
   date: string;
   value: number;
-  [key: string]: any;
+  [key: string]: string | number | boolean | undefined;
 }
 
 // Filter types

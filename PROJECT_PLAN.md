@@ -182,11 +182,11 @@ The final product should provide:
 ---
 
 ### Phase 7: Sentiment Analysis
-- [ ] MVP: Implement a **lexicon-based sentiment function** in Node.js.  
-- [ ] Store sentiment classification in MongoDB.  
-- [ ] Aggregate daily sentiment stats into SentimentDaily collection.  
-- [ ] Advanced: Build **FastAPI service with HuggingFace models** for high-accuracy sentiment.  
-- [ ] Integrate FastAPI with Next.js backend.  
+- [x] MVP: Implement a **lexicon-based sentiment function** in Node.js.  
+- [x] Store sentiment classification in MongoDB.  
+- [x] Aggregate daily sentiment stats into SentimentDaily collection.  
+- [x] Advanced: Build **FastAPI service with HuggingFace models** for high-accuracy sentiment.  
+- [x] Integrate FastAPI with Next.js backend.  
 
 ---
 

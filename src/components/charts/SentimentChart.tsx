@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { motion } from 'framer-motion';
 
 interface SentimentData {
@@ -16,7 +16,7 @@ interface ApiResponse {
   data: {
     distribution: SentimentData[];
     total: number;
-    trends: any[];
+    trends: Array<{ date: string; positive: number; negative: number; neutral: number }>;
   };
 }
 
@@ -65,7 +65,7 @@ const SentimentChart = ({ filters }: SentimentChartProps) => {
     fetchData();
   }, [filters]);
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: SentimentData }> }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
@@ -83,7 +83,11 @@ const SentimentChart = ({ filters }: SentimentChartProps) => {
     return null;
   };
 
-  const CustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+  const CustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: { cx?: number; cy?: number; midAngle?: number; innerRadius?: number; outerRadius?: number; percent?: number }) => {
+    if (!cx || !cy || midAngle === undefined || !innerRadius || !outerRadius || !percent) {
+      return null;
+    }
+    
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -104,7 +108,7 @@ const SentimentChart = ({ filters }: SentimentChartProps) => {
     );
   };
 
-  const onPieEnter = (_: any, index: number) => {
+  const onPieEnter = (_: unknown, index: number) => {
     setActiveIndex(index);
   };
 

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getSentimentStatsByDateRange } from '@/lib/sentimentService';
 import mockData from '@/data/mockData.json';
 
 export async function GET(request: Request) {
@@ -10,126 +10,65 @@ export async function GET(request: Request) {
     
     // Calculate date filter based on time range
     let dateFilter: Date | undefined;
-    let trendDays = 30;
     const now = new Date();
     switch (timeRange) {
       case '24h':
         dateFilter = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        trendDays = 1;
         break;
       case '7d':
         dateFilter = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        trendDays = 7;
         break;
       case '30d':
         dateFilter = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        trendDays = 30;
         break;
       case 'all':
       default:
         dateFilter = undefined;
-        trendDays = 365; // Show up to 1 year for 'all'
         break;
     }
 
-    // Try to get data from database first
+    // Try to get data from database first using sentiment service
     try {
-      const whereClause: any = {};
-      if (dateFilter) {
-        whereClause.createdAt = {
-          gte: dateFilter
-        };
-      }
-
-      const trendWhereClause: any = {};
-      if (dateFilter) {
-        trendWhereClause.date = {
-          gte: dateFilter
-        };
-      }
-
-      const [sentimentCounts, dailyTrends] = await Promise.all([
-        // Get sentiment distribution from posts
-        prisma.post.groupBy({
-          by: ['sentiment'],
-          where: whereClause,
-          _count: {
-            sentiment: true,
+      const startDate = dateFilter;
+      const endDate = new Date();
+      
+      const sentimentStats = await getSentimentStatsByDateRange(startDate || new Date(0), endDate);
+      
+      if (sentimentStats && sentimentStats.length > 0) {
+        // Transform the data to match expected format
+        const totalPosts = sentimentStats.reduce((sum, stat) => sum + stat.total, 0);
+        const distribution = [
+          {
+            name: 'Positive',
+            value: sentimentStats.reduce((sum, stat) => sum + (stat.positive?.count || 0), 0),
+            percentage: 0,
+            color: '#10b981'
           },
-        }),
-        // Get daily sentiment trends
-        prisma.sentimentDaily.findMany({
-          where: trendWhereClause,
-          orderBy: {
-            date: 'asc',
+          {
+            name: 'Negative', 
+            value: sentimentStats.reduce((sum, stat) => sum + (stat.negative?.count || 0), 0),
+            percentage: 0,
+            color: '#ef4444'
           },
-          take: trendDays,
-        })
-      ]);
-
-      if (sentimentCounts.length > 0 || dailyTrends.length > 0) {
-        // Process sentiment counts
-        const counts = { positive: 0, negative: 0, neutral: 0 };
-        sentimentCounts.forEach(item => {
-          switch (item.sentiment) {
-            case 'POS':
-              counts.positive = item._count.sentiment;
-              break;
-            case 'NEG':
-              counts.negative = item._count.sentiment;
-              break;
-            case 'NEU':
-              counts.neutral = item._count.sentiment;
-              break;
+          {
+            name: 'Neutral',
+            value: sentimentStats.reduce((sum, stat) => sum + (stat.neutral?.count || 0), 0),
+            percentage: 0,
+            color: '#6b7280'
           }
-        });
-
-        const sentimentData = [
-          { name: 'Positive', value: counts.positive, color: '#00ff00' },
-          { name: 'Negative', value: counts.negative, color: '#ff00ff' },
-          { name: 'Neutral', value: counts.neutral, color: '#00ffff' }
         ];
-
-        // Process daily trends
-        const trendsMap = new Map();
-        dailyTrends.forEach(item => {
-          const dateKey = item.date.toISOString().split('T')[0];
-          if (!trendsMap.has(dateKey)) {
-            trendsMap.set(dateKey, { positive: 0, negative: 0, neutral: 0 });
-          }
-          const trend = trendsMap.get(dateKey);
-          switch (item.sentiment) {
-            case 'POS':
-              trend.positive = item.count;
-              break;
-            case 'NEG':
-              trend.negative = item.count;
-              break;
-            case 'NEU':
-              trend.neutral = item.count;
-              break;
-          }
+        
+        // Calculate percentages
+        distribution.forEach(item => {
+          item.percentage = totalPosts > 0 ? (item.value / totalPosts) * 100 : 0;
         });
-
-        const processedTrends = Array.from(trendsMap.entries())
-          .map(([date, values]) => ({
-            date: new Date(date).toLocaleDateString('en-US', { 
-              month: 'short', 
-              day: 'numeric' 
-            }),
-            positive: values.positive,
-            negative: values.negative,
-            neutral: values.neutral,
-            fullDate: date
-          }))
-          .sort((a, b) => new Date(a.fullDate).getTime() - new Date(b.fullDate).getTime());
-
+        
         return NextResponse.json({
           success: true,
           data: {
-            distribution: sentimentData,
-            trends: processedTrends,
-            totals: counts
+            distribution,
+            total: totalPosts,
+            trends: sentimentStats
           },
           source: 'database'
         });

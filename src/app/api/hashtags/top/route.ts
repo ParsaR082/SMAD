@@ -31,7 +31,7 @@ export async function GET(request: Request) {
 
     // Try to get data from database first
     try {
-      const whereClause: any = {};
+      const whereClause: { date?: { gte: Date } } = {};
       if (dateFilter) {
         whereClause.date = {
           gte: dateFilter

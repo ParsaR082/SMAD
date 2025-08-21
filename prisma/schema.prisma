@@ -43,16 +43,18 @@ model User {
 }
 
 model Post {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  content   String
-  hashtags  String[]
-  mentions  String[]
-  sentiment Sentiment
-  likes     Int      @default(0)
-  retweets  Int      @default(0)
-  replies   Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  content         String
+  hashtags        String[]
+  mentions        String[]
+  sentiment       Sentiment
+  sentimentScore  Float?   @default(0.0)
+  sentimentConfidence Float? @default(0.0)
+  likes           Int      @default(0)
+  retweets        Int      @default(0)
+  replies         Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   // Relations
   userId    String   @db.ObjectId

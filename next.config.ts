@@ -12,10 +12,7 @@ const nextConfig: NextConfig = {
   
   // Enable experimental features
   experimental: {
-    // Enable server components logging
-    logging: {
-      level: 'info',
-    },
+    // Future experimental features can be added here
   },
   
   // Environment variables

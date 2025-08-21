@@ -114,7 +114,7 @@ const NetworkGraph = ({ filters }: NetworkGraphProps) => {
       )
       .force('charge', d3.forceManyBody().strength(-1200)) // Even stronger repulsion
       .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide().radius(d => 25 + Math.sqrt(d.followers / 600))) // Even larger collision radius
+      .force('collision', d3.forceCollide().radius(d => 25 + Math.sqrt((d as Node).followers / 600))) // Even larger collision radius
       .alphaDecay(0.01) // Even slower decay for better settling
       .velocityDecay(0.6) // Lower velocity decay for more movement
       .alpha(1) // Start with full energy
@@ -361,8 +361,9 @@ const NetworkGraph = ({ filters }: NetworkGraphProps) => {
           <button
             onClick={() => {
               const svg = d3.select(svgRef.current!);
+              const zoom = d3.zoom<SVGSVGElement, unknown>();
               svg.transition().duration(300).call(
-                d3.zoom<SVGSVGElement, unknown>().scaleBy as any, 1.5
+                zoom.scaleBy, 1.5
               );
             }}
             className="w-8 h-8 bg-card border border-border rounded flex items-center justify-center text-neon-green hover:bg-neon-green hover:text-background transition-colors"
@@ -373,8 +374,9 @@ const NetworkGraph = ({ filters }: NetworkGraphProps) => {
           <button
             onClick={() => {
               const svg = d3.select(svgRef.current!);
+              const zoom = d3.zoom<SVGSVGElement, unknown>();
               svg.transition().duration(300).call(
-                d3.zoom<SVGSVGElement, unknown>().scaleBy as any, 0.67
+                zoom.scaleBy, 0.67
               );
             }}
             className="w-8 h-8 bg-card border border-border rounded flex items-center justify-center text-neon-green hover:bg-neon-green hover:text-background transition-colors"
@@ -385,8 +387,9 @@ const NetworkGraph = ({ filters }: NetworkGraphProps) => {
           <button
             onClick={() => {
               const svg = d3.select(svgRef.current!);
+              const zoom = d3.zoom<SVGSVGElement, unknown>();
               svg.transition().duration(500).call(
-                d3.zoom<SVGSVGElement, unknown>().transform as any,
+                zoom.transform,
                 d3.zoomIdentity
               );
             }}

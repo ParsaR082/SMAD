@@ -1,0 +1,30 @@
+# FastAPI and server
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Machine Learning and NLP
+torch==2.1.0
+transformers==4.35.2
+tokenizers==0.15.0
+
+# Data processing
+numpy==1.24.3
+pandas==2.0.3
+
+# HTTP client for API integration
+httpx==0.25.2
+requests==2.31.0
+
+# Validation and serialization
+pydantic==2.5.0
+
+# Logging and monitoring
+loguru==0.7.2
+
+# Optional: GPU acceleration (uncomment if using CUDA)
+# torch-audio==2.1.0
+# torch-vision==0.16.0
+
+# Development dependencies
+pytest==7.4.3
+pytest-asyncio==0.21.1

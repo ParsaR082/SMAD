@@ -38,7 +38,7 @@ const HashtagTrendChart = ({ filters, onFilterChange }: HashtagTrendChartProps) 
     if (filters?.hashtag && filters.hashtag !== selectedHashtag) {
       setSelectedHashtag(filters.hashtag);
     }
-  }, [filters?.hashtag]);
+  }, [filters?.hashtag, selectedHashtag]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,7 +69,7 @@ const HashtagTrendChart = ({ filters, onFilterChange }: HashtagTrendChartProps) 
     fetchData();
   }, [selectedHashtag, filters]);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
@@ -83,7 +83,7 @@ const HashtagTrendChart = ({ filters, onFilterChange }: HashtagTrendChartProps) 
     return null;
   };
 
-  const CustomDot = (props: any) => {
+  const CustomDot = (props: { cx?: number; cy?: number }) => {
     const { cx, cy } = props;
     return (
       <circle 

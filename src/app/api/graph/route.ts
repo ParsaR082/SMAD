@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import mockData from '@/data/mockData.json';
 
 export async function GET(request: Request) {
@@ -31,7 +32,7 @@ export async function GET(request: Request) {
 
     // Try to get data from database first
     try {
-      const edgeWhereClause: any = {};
+      const edgeWhereClause: { createdAt?: { gte: Date } } = {};
       if (dateFilter) {
         edgeWhereClause.createdAt = {
           gte: dateFilter
@@ -39,11 +40,11 @@ export async function GET(request: Request) {
       }
 
       // Build user filter clause
-      const userWhereClause: any = {};
+      const userWhereClause: { OR?: Array<{ username?: { contains: string; mode: Prisma.QueryMode } } | { displayName?: { contains: string; mode: Prisma.QueryMode } }> } = {};
       if (userFilter) {
         userWhereClause.OR = [
-          { username: { contains: userFilter, mode: 'insensitive' } },
-          { displayName: { contains: userFilter, mode: 'insensitive' } }
+          { username: { contains: userFilter, mode: Prisma.QueryMode.insensitive } },
+          { displayName: { contains: userFilter, mode: Prisma.QueryMode.insensitive } }
         ];
       }
 

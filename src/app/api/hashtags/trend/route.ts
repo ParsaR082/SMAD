@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Sentiment } from '@prisma/client';
 import mockData from '@/data/mockData.json';
 
 export async function GET(request: Request) {
@@ -37,15 +38,15 @@ export async function GET(request: Request) {
     // Try to get data from database first
     try {
       // Map sentiment filter to database format
-      const sentimentMap: { [key: string]: string } = {
-        'positive': 'POS',
-        'neutral': 'NEU', 
-        'negative': 'NEG'
+      const sentimentMap: { [key: string]: Sentiment } = {
+        'positive': Sentiment.POS,
+        'neutral': Sentiment.NEU, 
+        'negative': Sentiment.NEG
       };
-      const mappedSentiment = sentiment && sentiment !== 'all' ? sentimentMap[sentiment] : null;
+      const mappedSentiment = sentiment && sentiment !== 'all' ? sentimentMap[sentiment] : undefined;
       
       // Build where clause for posts
-      const whereClause: any = {
+      const whereClause: { hashtags: { has: string }; createdAt?: { gte: Date }; sentimentScore?: { gte?: number; lte?: number }; sentiment?: Sentiment } = {
         hashtags: {
           has: hashtag
         }
@@ -137,7 +138,7 @@ export async function GET(request: Request) {
     });
     
     // Convert to trend data format
-    let filteredMockData = Object.entries(hashtagCountsByDate)
+    const filteredMockData = Object.entries(hashtagCountsByDate)
       .map(([dateStr, count]) => ({
         hashtag,
         date: dateStr,
