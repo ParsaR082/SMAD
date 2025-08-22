@@ -7,6 +7,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const timeRange = searchParams.get('timeRange') || '7d'; // 24h, 7d, 30d, all
     const userFilter = searchParams.get('user'); // user search filter
+    const hashtagFilter = searchParams.get('hashtag'); // hashtag filter
     
     // Calculate date filter based on time range
     let dateFilter: Date | undefined;
@@ -34,7 +35,11 @@ export async function GET(request: Request) {
       
       const sentimentStats = await getSentimentStatsByDateRange(startDate || new Date(0), endDate);
       
-      if (sentimentStats && sentimentStats.length > 0) {
+      // Check if we have actual data (not just empty records)
+      const hasActualData = sentimentStats && sentimentStats.length > 0 && 
+        sentimentStats.some(stat => stat.total > 0);
+      
+      if (hasActualData) {
         // Transform the data to match expected format
         const totalPosts = sentimentStats.reduce((sum, stat) => sum + stat.total, 0);
         const distribution = [
@@ -78,6 +83,11 @@ export async function GET(request: Request) {
     }
 
     // Fallback to mock data if database is not available
+    console.log('Using mock data fallback');
+    console.log('Date filter:', dateFilter);
+    console.log('Time range:', timeRange);
+    console.log('Total posts in mock data:', mockData.posts.length);
+    
     const sentimentCounts = {
       positive: 0,
       negative: 0,
@@ -93,13 +103,43 @@ export async function GET(request: Request) {
         user.name.toLowerCase().includes(searchTerm)
       );
       filteredUserIds = new Set(matchingUsers.map(user => user.id));
+      console.log('User filter applied, matching users:', matchingUsers.length);
     }
+    
+    let processedPosts = 0;
+    let userFiltered = 0;
+    let hashtagFiltered = 0;
+    let dateFiltered = 0;
     
     mockData.posts.forEach(post => {
       // Apply user filter
       if (filteredUserIds && !filteredUserIds.has(post.userId)) {
+        userFiltered++;
         return;
       }
+      
+      // Apply hashtag filter
+      if (hashtagFilter) {
+        const searchTerm = hashtagFilter.toLowerCase().replace('#', '');
+        const hasMatchingHashtag = post.hashtags.some(hashtag => 
+          hashtag.toLowerCase().includes(searchTerm)
+        );
+        if (!hasMatchingHashtag) {
+          hashtagFiltered++;
+          return;
+        }
+      }
+      
+      // Apply date filter
+      if (dateFilter) {
+        const postDate = new Date(post.createdAt);
+        if (postDate < dateFilter) {
+          dateFiltered++;
+          return;
+        }
+      }
+      
+      processedPosts++;
       
       switch (post.sentiment) {
         case 'POS':
@@ -114,11 +154,36 @@ export async function GET(request: Request) {
       }
     });
 
-    // Convert to chart format
+    console.log('Filtering results:');
+    console.log('- Processed posts:', processedPosts);
+    console.log('- User filtered:', userFiltered);
+    console.log('- Hashtag filtered:', hashtagFiltered);
+    console.log('- Date filtered:', dateFiltered);
+    console.log('Sentiment counts:', sentimentCounts);
+
+    // Calculate total
+    const totalPosts = sentimentCounts.positive + sentimentCounts.negative + sentimentCounts.neutral;
+    
+    // Convert to chart format with proper colors and percentages
     const sentimentData = [
-      { name: 'Positive', value: sentimentCounts.positive, color: '#00ff00' },
-      { name: 'Negative', value: sentimentCounts.negative, color: '#ff00ff' },
-      { name: 'Neutral', value: sentimentCounts.neutral, color: '#00ffff' }
+      { 
+        name: 'Positive', 
+        value: sentimentCounts.positive, 
+        percentage: totalPosts > 0 ? Math.round((sentimentCounts.positive / totalPosts) * 100 * 10) / 10 : 0,
+        color: '#10b981' 
+      },
+      { 
+        name: 'Negative', 
+        value: sentimentCounts.negative, 
+        percentage: totalPosts > 0 ? Math.round((sentimentCounts.negative / totalPosts) * 100 * 10) / 10 : 0,
+        color: '#ef4444' 
+      },
+      { 
+        name: 'Neutral', 
+        value: sentimentCounts.neutral, 
+        percentage: totalPosts > 0 ? Math.round((sentimentCounts.neutral / totalPosts) * 100 * 10) / 10 : 0,
+        color: '#6b7280' 
+      }
     ];
 
     // Also get daily sentiment trends
@@ -139,6 +204,7 @@ export async function GET(request: Request) {
       success: true,
       data: {
         distribution: sentimentData,
+        total: totalPosts,
         trends: dailyTrends,
         totals: sentimentCounts
       },

@@ -297,6 +297,7 @@ const NetworkGraph = ({ filters }: NetworkGraphProps) => {
     return (
       <motion.div 
         className="bg-card rounded-lg p-6 border border-border"
+        data-chart="network"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
@@ -313,6 +314,7 @@ const NetworkGraph = ({ filters }: NetworkGraphProps) => {
     return (
       <motion.div 
         className="bg-card rounded-lg p-6 border border-border"
+        data-chart="network"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
@@ -327,6 +329,7 @@ const NetworkGraph = ({ filters }: NetworkGraphProps) => {
 
   return (
     <motion.div 
+      data-chart="network"
       className="bg-card rounded-lg p-6 border border-border hover:border-neon-green transition-colors duration-300"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}

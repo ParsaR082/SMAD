@@ -6,14 +6,12 @@ import mockData from '@/data/mockData.json';
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const timeRange = searchParams.get('timeRange') || '7d'; // 24h, 7d, 30d, all
-    const sentiment = searchParams.get('sentiment'); // positive, negative, neutral
-    const userFilter = searchParams.get('user'); // user search filter
+    const timeRange = searchParams.get('timeRange') || '7d';
+    const sentiment = searchParams.get('sentiment');
+    const userFilter = searchParams.get('user');
     
-    // Calculate date filter based on time range
-    // Using 2024 as base year since mock data is from 2024
     let dateFilter: Date | undefined;
-    const mockDataBaseDate = new Date('2024-02-10'); // Use end of mock data period
+    const mockDataBaseDate = new Date('2024-02-10');
     switch (timeRange) {
       case '24h':
         dateFilter = new Date(mockDataBaseDate.getTime() - 24 * 60 * 60 * 1000);
@@ -30,7 +28,6 @@ export async function GET(request: Request) {
         break;
     }
 
-    // Try to get data from database first
     try {
       const edgeWhereClause: { createdAt?: { gte: Date } } = {};
       if (dateFilter) {
@@ -39,8 +36,7 @@ export async function GET(request: Request) {
         };
       }
 
-      // Build user filter clause
-      const userWhereClause: { OR?: Array<{ username?: { contains: string; mode: Prisma.QueryMode } } | { displayName?: { contains: string; mode: Prisma.QueryMode } }> } = {};
+      const userWhereClause: Prisma.UserWhereInput = {};
       if (userFilter) {
         userWhereClause.OR = [
           { username: { contains: userFilter, mode: Prisma.QueryMode.insensitive } },
@@ -51,42 +47,38 @@ export async function GET(request: Request) {
       const [users, edges] = await Promise.all([
         prisma.user.findMany({
           where: userWhereClause,
-          take: 100 // Limit for performance
+          take: 100
         }),
         prisma.edge.findMany({
           where: edgeWhereClause,
-          take: 500 // Limit for performance
+          take: 500
         })
       ]);
 
       if (users.length > 0 && edges.length > 0) {
-        // Transform users into nodes for D3 force graph
         const nodes = users.map(user => ({
           id: user.id,
           name: user.displayName || user.username,
           handle: user.username,
           followers: user.followers,
-          group: Math.floor(user.followers / 5000) + 1, // Group by follower count for coloring
-          radius: Math.max(8, Math.min(20, user.followers / 1000)) // Size based on followers
+          group: Math.floor(user.followers / 5000) + 1,
+          radius: Math.max(8, Math.min(20, user.followers / 1000))
         }));
 
-        // Transform edges into links for D3 force graph
         const links = edges.map(edge => ({
           source: edge.srcUserId,
           target: edge.dstUserId,
           type: edge.type,
-          weight: 1, // Default weight since Edge model doesn't have weight field
-          value: 1 // D3 uses 'value' for link strength
+          weight: 1,
+          value: 1
         }));
 
-        // Calculate node degrees (number of connections)
         const nodeDegrees: { [key: string]: number } = {};
         links.forEach(link => {
           nodeDegrees[link.source] = (nodeDegrees[link.source] || 0) + 1;
           nodeDegrees[link.target] = (nodeDegrees[link.target] || 0) + 1;
         });
 
-        // Add degree information to nodes
         const enhancedNodes = nodes.map(node => ({
           ...node,
           degree: nodeDegrees[node.id] || 0
@@ -111,8 +103,7 @@ export async function GET(request: Request) {
       console.log('Database not available, falling back to mock data:', dbError);
     }
 
-    // Fallback to mock data if database is not available
-    // Map sentiment filter to mock data format
+    // Fallback to mock data
     const sentimentMap: { [key: string]: string } = {
       'positive': 'POS',
       'neutral': 'NEU', 
@@ -120,7 +111,6 @@ export async function GET(request: Request) {
     };
     const mappedSentiment = sentiment && sentiment !== 'all' ? sentimentMap[sentiment] : null;
     
-    // Filter users based on user search
     let filteredUsers = mockData.users;
     if (userFilter) {
       const searchTerm = userFilter.toLowerCase();
@@ -130,22 +120,17 @@ export async function GET(request: Request) {
       );
     }
     
-    // Get user IDs for filtering
     const filteredUserIds = new Set(filteredUsers.map(user => user.id));
     
-    // Filter posts based on time, sentiment, and user filter
     const filteredPosts = mockData.posts.filter(post => {
-      // Apply user filter
       if (userFilter && !filteredUserIds.has(post.userId)) {
         return false;
       }
       
-      // Apply time filter
       if (dateFilter && new Date(post.createdAt) < dateFilter) {
         return false;
       }
       
-      // Apply sentiment filter
       if (mappedSentiment && post.sentiment !== mappedSentiment) {
         return false;
       }
@@ -153,27 +138,22 @@ export async function GET(request: Request) {
       return true;
     });
     
-    // Filter edges based on time range and user filter
     const filteredEdges = mockData.edges.filter(edge => {
-      // Apply user filter - include edge if either source or destination user matches
       if (userFilter && !filteredUserIds.has(edge.srcUserId) && !filteredUserIds.has(edge.dstUserId)) {
         return false;
       }
       
-      // Apply time filter using timestamp field from edges
       if (dateFilter && new Date(edge.timestamp) < dateFilter) {
         return false;
       }
       return true;
     });
     
-    // Get unique user IDs from both filtered posts and edges
     const activeUserIds = new Set([
       ...filteredPosts.map(post => post.userId),
       ...filteredEdges.flatMap(edge => [edge.srcUserId, edge.dstUserId])
     ]);
     
-    // Transform users into nodes for D3 force graph (only include active users)
     const nodes = mockData.users
       .filter(user => activeUserIds.has(user.id))
       .map(user => ({
@@ -181,11 +161,10 @@ export async function GET(request: Request) {
         name: user.name,
         handle: user.handle,
         followers: user.followers,
-        group: Math.floor(user.followers / 5000) + 1, // Group by follower count for coloring
-        radius: Math.max(8, Math.min(20, user.followers / 1000)) // Size based on followers
+        group: Math.floor(user.followers / 5000) + 1,
+        radius: Math.max(8, Math.min(20, user.followers / 1000))
       }));
 
-    // Transform edges into links for D3 force graph (only include edges between active users)
     const links = filteredEdges
       .filter(edge => activeUserIds.has(edge.srcUserId) && activeUserIds.has(edge.dstUserId))
       .map(edge => ({
@@ -193,17 +172,15 @@ export async function GET(request: Request) {
         target: edge.dstUserId,
         type: edge.type,
         weight: edge.weight,
-        value: edge.weight // D3 uses 'value' for link strength
+        value: edge.weight
       }));
 
-    // Calculate node degrees (number of connections)
     const nodeDegrees: { [key: string]: number } = {};
     links.forEach(link => {
       nodeDegrees[link.source] = (nodeDegrees[link.source] || 0) + 1;
       nodeDegrees[link.target] = (nodeDegrees[link.target] || 0) + 1;
     });
 
-    // Add degree information to nodes
     const enhancedNodes = nodes.map(node => ({
       ...node,
       degree: nodeDegrees[node.id] || 0

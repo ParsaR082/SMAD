@@ -190,11 +190,11 @@ The final product should provide:
 
 ---
 
-### Phase 8: Export & Reporting
-- [ ] Add "Export to PNG" feature for all charts (using html2canvas).  
-- [ ] Implement "Export to PDF" option with jsPDF.  
-- [ ] Build PDF layout with multiple charts and metadata.  
-- [ ] Provide download button in dashboard header.  
+### Phase 8: Export & Reporting ✅
+- [x] Add "Export to PNG" feature for all charts (using html2canvas).  
+- [x] Implement "Export to PDF" option with jsPDF.  
+- [x] Build PDF layout with multiple charts and metadata.  
+- [x] Provide download button in dashboard header.  
 
 ---
 

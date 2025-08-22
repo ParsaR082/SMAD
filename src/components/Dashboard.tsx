@@ -8,6 +8,7 @@ import SentimentChart from './charts/SentimentChart';
 import NetworkGraph from './charts/NetworkGraph';
 import FilterBar from './filters/FilterBar';
 import { DashboardSkeleton } from './ui/Skeleton';
+import ExportButton from './ui/ExportButton';
 
 const Dashboard = () => {
   const [currentTime, setCurrentTime] = useState('');
@@ -91,6 +92,8 @@ const Dashboard = () => {
           </div>
           
           <div className="flex items-center space-x-4">
+            <ExportButton />
+            
             <div className="text-right">
               <div className="text-sm text-muted-foreground">Last Updated</div>
               <div className="text-neon-cyan font-medium">

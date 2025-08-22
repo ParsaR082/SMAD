@@ -104,15 +104,11 @@ const TopHashtagsChart = ({ filters }: TopHashtagsChartProps) => {
 
   return (
     <motion.div 
-      className="bg-gradient-to-br from-card to-secondary rounded-lg p-4 md:p-6 border border-border hover:border-neon-cyan transition-all duration-300 hover:shadow-lg hover:shadow-neon-cyan/20"
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ 
-        duration: 0.6,
-        type: "spring",
-        stiffness: 100,
-        damping: 15
-      }}
+      data-chart="top-hashtags"
+      className="bg-gradient-to-br from-card to-secondary rounded-lg p-4 md:p-6 border border-border shadow-lg"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.1 }}
       whileHover={{ 
         scale: 1.02,
         y: -4,
@@ -156,6 +152,7 @@ const TopHashtagsChart = ({ filters }: TopHashtagsChartProps) => {
               bottom: 60,
             }}
           >
+
             <CartesianGrid 
               strokeDasharray="3 3" 
               stroke="#333333" 
@@ -180,17 +177,11 @@ const TopHashtagsChart = ({ filters }: TopHashtagsChartProps) => {
             />
             <Bar 
               dataKey="value" 
-              fill="url(#barGradient)"
+              fill="#00ffff"
               radius={[4, 4, 0, 0]}
               stroke="#00ffff"
               strokeWidth={1}
             />
-            <defs>
-              <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#00ffff" stopOpacity={0.8} />
-                <stop offset="100%" stopColor="#00ffff" stopOpacity={0.3} />
-              </linearGradient>
-            </defs>
           </BarChart>
         </ResponsiveContainer>
       </motion.div>

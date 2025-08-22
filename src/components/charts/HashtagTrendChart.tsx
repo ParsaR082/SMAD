@@ -132,11 +132,11 @@ const HashtagTrendChart = ({ filters, onFilterChange }: HashtagTrendChartProps) 
 
   return (
     <motion.div 
-      className="bg-card rounded-lg p-6 border border-border hover:border-neon-magenta transition-colors duration-300"
+      data-chart="hashtag-trend"
+      className="bg-gradient-to-br from-card to-secondary rounded-lg p-6 border border-border"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.1 }}
-      whileHover={{ scale: 1.02 }}
+      transition={{ duration: 0.5, delay: 0.3 }}
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-bold text-card-foreground flex items-center">
