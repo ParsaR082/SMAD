@@ -32,9 +32,5 @@ export async function GET() {
 
 // Support HEAD requests for simple health checks
 export async function HEAD() {
-  try {
-    return new NextResponse(null, { status: 200 });
-  } catch (error) {
-    return new NextResponse(null, { status: 503 });
-  }
+  return new NextResponse(null, { status: 200 });
 }
