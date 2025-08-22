@@ -35,32 +35,10 @@ export const exportToPNG = async (): Promise<void> => {
       
       try {
         const canvas = await html2canvas(chartElement, {
-          backgroundColor: '#0a0a0a',
-          scale: 2,
+          background: '#0a0a0a',
           useCORS: true,
           allowTaint: false,
-          logging: false,
-          onclone: (clonedDoc) => {
-            // Replace problematic color functions in the cloned document
-            const allElements = clonedDoc.querySelectorAll('*');
-            allElements.forEach(el => {
-              const element = el as HTMLElement;
-              if (element.style) {
-                ['color', 'background-color', 'border-color', 'fill', 'stroke'].forEach(prop => {
-                  const value = element.style.getPropertyValue(prop);
-                  if (value && (value.includes('oklab') || value.includes('oklch') || value.includes('color-mix'))) {
-                    if (prop === 'color' || prop === 'fill') {
-                      element.style.setProperty(prop, '#ededed', 'important');
-                    } else if (prop === 'background-color') {
-                      element.style.setProperty(prop, '#0a0a0a', 'important');
-                    } else {
-                      element.style.setProperty(prop, '#333333', 'important');
-                    }
-                  }
-                });
-              }
-            });
-          }
+          logging: false
         });
         canvases.push(canvas);
       } catch (chartError) {
@@ -238,31 +216,12 @@ export const exportToPDF = async (): Promise<void> => {
     
     // Capture the container
     const canvas = await html2canvas(exportContainer, {
-      backgroundColor: 'white',
-      scale: 2,
+      background: 'white',
       useCORS: true,
       allowTaint: false,
       width: 800,
       height: exportContainer.scrollHeight,
-      logging: false,
-      onclone: (clonedDoc) => {
-        const allElements = clonedDoc.querySelectorAll('*');
-        allElements.forEach(el => {
-          const style = (el as HTMLElement).style;
-          ['color', 'background-color', 'border-color', 'fill', 'stroke'].forEach(prop => {
-            const value = style.getPropertyValue(prop);
-            if (value && (value.includes('oklab') || value.includes('oklch') || value.includes('color-mix'))) {
-              if (prop === 'color') {
-                style.setProperty(prop, '#333333', 'important');
-              } else if (prop === 'background-color') {
-                style.setProperty(prop, 'white', 'important');
-              } else {
-                style.setProperty(prop, '#cccccc', 'important');
-              }
-            }
-          });
-        });
-      }
+      logging: false
     });
 
     console.log('PDF capture completed, creating PDF...');

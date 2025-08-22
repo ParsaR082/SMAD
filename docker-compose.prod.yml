@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongo:
+    image: mongo:6
+    container_name: smad-mongodb-prod
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: analytics
+    volumes:
+      - mongo-data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    networks:
+      - smad-network
+    healthcheck:
+      test: |
+        mongosh --eval 'try { rs.status().ok } catch(e) { rs.initiate({_id: "rs0", members: [{_id: 0, host: "localhost:27017"}]}).ok }'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Sentiment Analysis API
+  sentiment-api:
+    build:
+      context: ./sentiment-api
+      dockerfile: Dockerfile
+    container_name: smad-sentiment-api-prod
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - smad-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Main Web Application
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smad-web-prod
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=mongodb://mongo:27017/analytics
+      - SENTIMENT_API_URL=http://sentiment-api:8000
+      - NEXTAUTH_URL=https://smad.blckbrd.ir
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+    depends_on:
+      mongo:
+        condition: service_healthy
+      sentiment-api:
+        condition: service_healthy
+    networks:
+      - smad-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: smad-nginx-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    depends_on:
+      - web
+    networks:
+      - smad-network
+    command: ["/bin/sh", "-c", "while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g 'daemon off;'"]
+
+  # Let's Encrypt Certbot
+  certbot:
+    image: certbot/certbot
+    container_name: smad-certbot-prod
+    restart: "no"
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+volumes:
+  mongo-data:
+    driver: local
+
+networks:
+  smad-network:
+    driver: bridge

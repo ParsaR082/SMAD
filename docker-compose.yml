@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongo:
+    image: mongo:6
+    container_name: smad-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: analytics
+    volumes:
+      - mongo-data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    networks:
+      - smad-network
+    healthcheck:
+      test: |
+        mongosh --eval 'try { rs.status().ok } catch(e) { rs.initiate({_id: "rs0", members: [{_id: 0, host: "localhost:27017"}]}).ok }'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Sentiment Analysis API
+  sentiment-api:
+    build:
+      context: ./sentiment-api
+      dockerfile: Dockerfile
+    container_name: smad-sentiment-api
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - smad-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Main Web Application
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smad-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=mongodb://mongo:27017/analytics
+      - SENTIMENT_API_URL=http://sentiment-api:8000
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-your-secret-key-change-in-production}
+    depends_on:
+      mongo:
+        condition: service_healthy
+      sentiment-api:
+        condition: service_healthy
+    networks:
+      - smad-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  mongo-data:
+    driver: local
+
+networks:
+  smad-network:
+    driver: bridge

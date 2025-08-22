@@ -2,6 +2,21 @@
 
 A modern, full-stack web application for analyzing social media data with interactive visualizations, sentiment analysis, and user network graphs. Built with Next.js 14, featuring a sleek dark theme with neon highlights and smooth animations.
 
+## 🚀 Quick Start
+
+**Deploy in 2 commands:**
+
+```bash
+git clone <your-repository-url>
+cd smad-dashboard && docker-compose up -d --build
+```
+
+✅ **That's it!** The application will be available at `http://localhost:3000`
+
+All services (web app, database, sentiment API) are automatically configured and deployed.
+
+📖 **Need more details?** See [QUICK_DEPLOY.md](./QUICK_DEPLOY.md) for troubleshooting and [DEPLOYMENT.md](./DEPLOYMENT.md) for production setup.
+
 ## ✨ Features
 
 - **📈 Interactive Dashboards** - Real-time data visualization with customizable filters
