@@ -48,12 +48,12 @@ services:
     container_name: smad-web
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "8080:3000"
     environment:
       - NODE_ENV=production
       - DATABASE_URL=mongodb://mongo:27017/analytics
       - SENTIMENT_API_URL=http://sentiment-api:8000
-      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:8080}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-your-secret-key-change-in-production}
     depends_on:
       mongo:
