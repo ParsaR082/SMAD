@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # MongoDB Database
   mongo:
-    image: mongo:6
+    image: mongo:4.4
     container_name: smad-mongodb
     restart: unless-stopped
     environment:
@@ -16,7 +16,7 @@ services:
       - smad-network
     healthcheck:
       test: |
-        mongosh --eval 'try { rs.status().ok } catch(e) { rs.initiate({_id: "rs0", members: [{_id: 0, host: "localhost:27017"}]}).ok }'
+        mongo --eval 'try { rs.status().ok } catch(e) { rs.initiate({_id: "rs0", members: [{_id: 0, host: "localhost:27017"}]}).ok }'
       interval: 30s
       timeout: 10s
       retries: 3
